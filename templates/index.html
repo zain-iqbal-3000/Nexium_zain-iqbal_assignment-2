@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Summarizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .summarize-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .summarize-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .summarize-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .result-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .article-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .summary-text {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            line-height: 1.6;
+            font-size: 1.1em;
+            color: #444;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .keywords-section, .keypoints-section {
+            margin-top: 20px;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .keyword {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .keypoints {
+            list-style: none;
+        }
+
+        .keypoints li {
+            background: white;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #c33;
+            margin-bottom: 20px;
+        }
+
+        .example-urls {
+            margin-top: 15px;
+        }
+
+        .example-title {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .example-url {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            color: #667eea;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-bottom: 5px;
+        }
+
+        .example-url:hover {
+            background: #e9ecef;
+        }
+
+        @media (max-width: 768px) {
+            .url-input-group {
+                flex-direction: column;
+            }
+            
+            .article-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Blog Summarizer</h1>
+            <p>Enter a blog URL and get an instant AI-powered summary</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="url-input-group">
+                    <input 
+                        type="url" 
+                        id="urlInput" 
+                        class="url-input" 
+                        placeholder="Enter blog URL (e.g., https://example.com/blog-post)"
+                        required
+                    >
+                    <button id="summarizeBtn" class="summarize-btn">
+                        Summarize
+                    </button>
+                </div>
+                
+                <div class="example-urls">
+                    <div class="example-title">Try these example URLs:</div>
+                    <div class="example-url" onclick="fillUrl('https://blog.openai.com/gpt-4')">
+                        OpenAI Blog Post
+                    </div>
+                    <div class="example-url" onclick="fillUrl('https://medium.com/@example/article')">
+                        Medium Article
+                    </div>
+                    <div class="example-url" onclick="fillUrl('https://techcrunch.com/example')">
+                        TechCrunch Article
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Analyzing and summarizing content...</p>
+            </div>
+
+            <div id="error" class="error" style="display: none;"></div>
+
+            <div id="results" class="results">
+                <div class="result-card">
+                    <div class="result-title" id="articleTitle"></div>
+                    
+                    <div class="article-info">
+                        <div class="info-item">
+                            <div class="info-label">Word Count</div>
+                            <div class="info-value" id="wordCount">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Summary Length</div>
+                            <div class="info-value" id="summaryLength">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Compression</div>
+                            <div class="info-value" id="compressionRatio">-</div>
+                        </div>
+                    </div>
+
+                    <div class="summary-text" id="summaryText"></div>
+
+                    <div class="keywords-section">
+                        <div class="section-title">🏷️ Key Topics</div>
+                        <div class="keywords" id="keywords"></div>
+                    </div>
+
+                    <div class="keypoints-section">
+                        <div class="section-title">💡 Key Points</div>
+                        <ul class="keypoints" id="keypoints"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const summarizeBtn = document.getElementById('summarizeBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const results = document.getElementById('results');
+
+        // Handle form submission
+        summarizeBtn.addEventListener('click', handleSummarize);
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSummarize();
+            }
+        });
+
+        function fillUrl(url) {
+            urlInput.value = url;
+        }
+
+        async function handleSummarize() {
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a valid URL');
+                return;
+            }
+
+            // Basic URL validation
+            if (!isValidUrl(url)) {
+                showError('Please enter a valid URL (must start with http:// or https://)');
+                return;
+            }
+
+            // Show loading state
+            showLoading();
+            hideError();
+            hideResults();
+
+            try {
+                const response = await fetch('/api/summarize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'Failed to summarize the blog post');
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                showError('Network error. Please check your connection and try again.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function showLoading() {
+            loading.style.display = 'block';
+            summarizeBtn.disabled = true;
+            summarizeBtn.textContent = 'Analyzing...';
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+            summarizeBtn.disabled = false;
+            summarizeBtn.textContent = 'Summarize';
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+
+        function hideError() {
+            error.style.display = 'none';
+        }
+
+        function hideResults() {
+            results.style.display = 'none';
+        }
+
+        function displayResults(data) {
+            // Update article info
+            document.getElementById('articleTitle').textContent = data.title;
+            document.getElementById('wordCount').textContent = data.content_stats.word_count.toLocaleString();
+            document.getElementById('summaryLength').textContent = data.analysis.summary_length + ' words';
+            document.getElementById('compressionRatio').textContent = data.analysis.compression_ratio + '%';
+
+            // Update summary
+            document.getElementById('summaryText').textContent = data.summary;
+
+            // Update keywords
+            const keywordsContainer = document.getElementById('keywords');
+            keywordsContainer.innerHTML = '';
+            data.keywords.slice(0, 8).forEach(keyword => {
+                const keywordSpan = document.createElement('span');
+                keywordSpan.className = 'keyword';
+                keywordSpan.textContent = keyword;
+                keywordsContainer.appendChild(keywordSpan);
+            });
+
+            // Update key points
+            const keypointsContainer = document.getElementById('keypoints');
+            keypointsContainer.innerHTML = '';
+            data.key_points.slice(0, 3).forEach(point => {
+                const li = document.createElement('li');
+                li.textContent = point.length > 100 ? point.substring(0, 100) + '...' : point;
+                keypointsContainer.appendChild(li);
+            });
+
+            // Show results
+            results.style.display = 'block';
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Auto-focus on URL input
+        urlInput.focus();
+    </script>
+</body>
+</html>
